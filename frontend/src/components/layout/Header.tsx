@@ -1,15 +1,17 @@
-import type { ReactNode } from "react";
-interface HeaderProps {
-  title: string;
-  text?: string;
-  children: ReactNode;
-  onHome: () => void;
+import { Link } from "react-router-dom";
+export default function Header() {
+  return (
+    <header>
+      <div className="header-kapsayici">
+        <div>
+          <h1>
+            <Link to="/">Kampüs Etkinlikleri</Link>
+          </h1>
+          <p>
+            Fakültedeki seminer, atölye ve söyleşileri tek yerden takip edin.
+          </p>
+        </div>
+      </div>
+    </header>
+  );
 }
-export default function Header({ title, text, children, onHome }: HeaderProps) {
-  return <header><div className="header-kapsayici">
-    <h1><a href="#home" onClick={e => { e.preventDefault(); onHome(); }}>{title}</a></h1>
-    {text && <p>{text}</p>}
-    {children}
-  </div></header>;
-}
-

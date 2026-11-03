@@ -1,20 +1,88 @@
-import type { Category } from "../../types/campus-event";
-interface EventFormProps {
-  onSubmit: () => void;
+import { useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import type { EventFormData, EventFormErrors } from "../../types/campus-event";
+import { validateEvent } from "../../utils/validate-event";
+interface Props {
+  initialData: EventFormData;
+  submitText: string;
+  onSubmit: (data: EventFormData) => void;
 }
-const formCategories: Category[] = ["Seminer", "Atölye", "Söyleşi", "Yarışma"];
-export default function EventForm({ onSubmit }: EventFormProps) {
-  return <section className="form-kapsayici">
-          <form id="etkinlik-formu" noValidate onSubmit={e => { e.preventDefault(); onSubmit(); }}>
-            <div className="form-alan"><label htmlFor="ad">Etkinlik adı</label><input id="ad" name="ad" type="text" maxLength={80} required /></div>
-            <div className="form-alan"><label htmlFor="kategori">Kategori</label><select id="kategori" name="kategori" defaultValue=""><option value="">Seçiniz</option>{formCategories.map(value => <option key={value} value={value}>{value}</option>)}</select></div>
-            <div className="form-alan"><label htmlFor="tarih">Tarih</label><input id="tarih" name="tarih" type="date" required /></div>
-            <div className="form-alan"><label htmlFor="saat">Saat</label><input id="saat" name="saat" type="time" required /></div>
-            <div className="form-alan"><label htmlFor="yer">Yer</label><input id="yer" name="yer" type="text" required /></div>
-            <div className="form-alan"><label htmlFor="kontenjan">Kontenjan (isteğe bağlı)</label><input id="kontenjan" name="kontenjan" type="number" min={1} max={1000} step={1} /></div>
-            <div className="form-alan"><label htmlFor="aciklama">Açıklama</label><textarea id="aciklama" name="aciklama" rows={5} /></div>
-            <button className="btn-islem" type="submit">Kaydet</button>
-          </form>
-        </section>;
+const fields = [
+  { name: "title", label: "Etkinlik adı", type: "text" },
+  { name: "category", label: "Kategori", type: "select" },
+  { name: "date", label: "Tarih", type: "date" },
+  { name: "time", label: "Saat", type: "time" },
+  { name: "location", label: "Yer", type: "text" },
+  { name: "capacity", label: "Kontenjan", type: "number" },
+  { name: "description", label: "Açıklama", type: "textarea" },
+] as const;
+export default function EventForm({
+  initialData,
+  submitText,
+  onSubmit,
+}: Props) {
+  const [data, setData] = useState<EventFormData>(initialData);
+  const [errors, setErrors] = useState<EventFormErrors>({});
+  function handleChange(
+    event: ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) {
+    const { name, value } = event.target;
+    setData((previous) => ({ ...previous, [name]: value }));
+  }
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const found = validateEvent(data);
+    setErrors(found);
+    if (Object.keys(found).length === 0) onSubmit(data);
+  }
+  return (
+    <section className="form-kapsayici">
+      <form noValidate onSubmit={handleSubmit}>
+        {fields.map(({ name, label, type }) => {
+          const props = {
+            id: name,
+            name,
+            value: data[name],
+            onChange: handleChange,
+            required: true,
+            "aria-invalid": errors[name] ? (true as const) : undefined,
+            "aria-describedby": errors[name] ? `${name}-error` : undefined,
+          };
+          return (
+            <div className="form-alan" key={name}>
+              <label htmlFor={name}>{label}</label>
+              {type === "select" ? (
+                <select {...props}>
+                  <option value="">Seçiniz</option>
+                  {["Seminer", "Atölye", "Söyleşi", "Yarışma"].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              ) : type === "textarea" ? (
+                <textarea {...props} rows={5} />
+              ) : (
+                <input
+                  {...props}
+                  type={type}
+                  min={type === "number" ? 1 : undefined}
+                  max={type === "number" ? 1000 : undefined}
+                  step={type === "number" ? 1 : undefined}
+                />
+              )}
+              {errors[name] && (
+                <span id={`${name}-error`} className="hata-metni" role="alert">
+                  {errors[name]}
+                </span>
+              )}
+            </div>
+          );
+        })}
+        <button className="btn-islem" type="submit">
+          {submitText}
+        </button>
+      </form>
+    </section>
+  );
 }
-
